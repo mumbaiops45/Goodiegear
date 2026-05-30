@@ -357,11 +357,18 @@ exports.getCategories = async (req, res) => {
       name: category.name,
       description: category.description,
 
+      // image: category.image
+      //   ? category.image.startsWith("http")
+      //     ? category.image
+      //     : `https://goodiegear-2.onrender.com/${category.image}`
+      //   : null,
+
       image: category.image
-        ? category.image.startsWith("http")
-          ? category.image
-          : `https://goodiegear-2.onrender.com/${category.image}`
-        : null,
+  ? category.image.startsWith("http") ||
+    category.image.startsWith("data:image")
+    ? category.image
+    : `https://goodiegear-2.onrender.com/${category.image}`
+  : null,
 
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
