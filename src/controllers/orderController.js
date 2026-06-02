@@ -12,59 +12,128 @@ const razorpay = require(
 
 
 // CREATE ORDER
-exports.createOrder = async (
-  req,
-  res
-) => {
+// exports.createOrder = async (
+//   req,
+//   res
+// ) => {
+//   try {
+//     const {
+//       shippingAddress,
+//     } = req.body;
+
+//     // GET USER CART
+//     const cart =
+//       await Cart.findOne({
+//         user: req.user.id,
+//       }).populate(
+//         "items.product"
+//       );
+
+//     if (
+//       !cart ||
+//       cart.items.length === 0
+//     ) {
+//       return res.status(400).json({
+//         message: "Cart is empty",
+//       });
+//     }
+
+//     // CREATE ORDER ITEMS
+//     const orderItems = [];
+
+//     let totalPrice = 0;
+
+//     for (const item of cart.items) {
+//       const product =
+//         item.product;
+
+//       const vendor =
+//         await Vendor.findById(
+//           product.vendor
+//         );
+
+//       orderItems.push({
+//         product: product._id,
+
+//         vendor: vendor._id,
+
+//         quantity: item.quantity,
+
+//         price: product.price,
+//       });
+
+//       totalPrice +=
+//         product.price *
+//         item.quantity;
+//     }
+
+//     // CREATE ORDER
+//     const order =
+//       await Order.create({
+//         user: req.user.id,
+
+//         orderItems,
+
+//         shippingAddress,
+
+//         totalPrice,
+//       });
+
+//     // CLEAR CART
+//     cart.items = [];
+
+//     await cart.save();
+
+//     res.status(201).json({
+//       message:
+//         "Order placed successfully",
+
+//       order,
+//     });
+//   } catch (error) {
+//     res.status(500).json(error);
+//   }
+// };
+// CREATE ORDER
+exports.createOrder = async (req, res) => {
   try {
     const {
+      orderItems,
       shippingAddress,
+      totalPrice,
     } = req.body;
 
-    // GET USER CART
-    const cart =
-      await Cart.findOne({
-        user: req.user.id,
-      }).populate(
-        "items.product"
-      );
-
+    // VALIDATION
     if (
-      !cart ||
-      cart.items.length === 0
+      !orderItems ||
+      orderItems.length === 0
     ) {
       return res.status(400).json({
-        message: "Cart is empty",
+        message: "No order items",
       });
     }
 
-    // CREATE ORDER ITEMS
-    const orderItems = [];
+    // BUILD ORDER ITEMS
+    const formattedItems = [];
 
-    let totalPrice = 0;
-
-    for (const item of cart.items) {
+    for (const item of orderItems) {
       const product =
-        item.product;
-
-      const vendor =
-        await Vendor.findById(
-          product.vendor
+        await Product.findById(
+          item.product
         );
 
-      orderItems.push({
+      if (!product) {
+        return res.status(404).json({
+          message: "Product not found",
+        });
+      }
+
+      formattedItems.push({
         product: product._id,
-
-        vendor: vendor._id,
-
+        vendor: product.vendor,
         quantity: item.quantity,
-
-        price: product.price,
+        price: item.price,
       });
-
-      totalPrice +=
-        product.price *
-        item.quantity;
     }
 
     // CREATE ORDER
@@ -72,17 +141,13 @@ exports.createOrder = async (
       await Order.create({
         user: req.user.id,
 
-        orderItems,
+        orderItems:
+          formattedItems,
 
         shippingAddress,
 
         totalPrice,
       });
-
-    // CLEAR CART
-    cart.items = [];
-
-    await cart.save();
 
     res.status(201).json({
       message:
@@ -91,10 +156,16 @@ exports.createOrder = async (
       order,
     });
   } catch (error) {
-    res.status(500).json(error);
+    console.log(error);
+
+    res.status(500).json({
+      message:
+        "Failed to create order",
+      error:
+        error.message,
+    });
   }
 };
-
 
 // GET MY ORDERS
 exports.getMyOrders = async (
