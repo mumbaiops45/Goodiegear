@@ -155,7 +155,7 @@ exports.updateProduct = async (
         req.params.id,
         req.body,
         {
-          new: true,
+          returnDocument: 'after',
         }
       );
 
