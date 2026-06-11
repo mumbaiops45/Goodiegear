@@ -22,6 +22,9 @@ const {
   deleteProduct,
   uploadProductImage,
   getVendorProducts,
+  createProductReview,
+  getProductReviews,
+  getAllReviews,
 } = require(
   "../controllers/productController"
 );
@@ -36,7 +39,13 @@ router.post(
   vendorMiddleware,
   createProduct
 );
-
+// =========================
+// GET SINGLE PRODUCT
+// =========================
+router.get(
+  "/:id",
+  getSingleProduct
+);
 
 // =========================
 // GET ALL PRODUCTS
@@ -59,14 +68,22 @@ router.get(
   getVendorProducts
 );
 
-
-// =========================
-// GET SINGLE PRODUCT
-// =========================
 router.get(
-  "/:id",
-  getSingleProduct
+  "/reviews/all",
+  getAllReviews
 );
+
+router.get(
+  "/:id/reviews",
+  getProductReviews
+);
+
+router.post(
+  "/:id/reviews",
+  authMiddleware,
+  createProductReview
+);
+
 
 
 // =========================
@@ -101,6 +118,7 @@ router.post(
   upload.single("image"),
   uploadProductImage
 );
+
 
 
 module.exports = router;

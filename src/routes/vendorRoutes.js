@@ -15,6 +15,7 @@ const {
   getMyVendorProfile,
   approveVendor,
   getAllVendors,
+  updateVendorProfile,
 } = require(
   "../controllers/vendorController"
 );
@@ -53,7 +54,10 @@ router.put(
   approveVendor
 );
 
-
-
+router.put(
+  "/me",
+  authMiddleware,
+  updateVendorProfile
+);
 
 module.exports = router;

@@ -24,6 +24,7 @@ const {
   dummyPayment,
   getVendorOrders,
   getVendorEarnings,
+  getVendorDashboard,
 } = require(
   "../controllers/orderController"
 );
@@ -101,6 +102,13 @@ router.get(
   authMiddleware,
   vendorMiddleware,
   getVendorEarnings
+);
+
+router.get(
+  "/vendor/dashboard",
+  authMiddleware,
+  vendorMiddleware,
+  getVendorDashboard
 );
 
 module.exports = router;

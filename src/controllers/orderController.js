@@ -253,6 +253,69 @@ exports.updateOrderStatus =
     }
   };
 
+  exports.getVendorDashboard =
+  async (req, res) => {
+    try {
+      const vendor =
+        await Vendor.findOne({
+          user: req.user.id,
+        });
+
+      if (!vendor) {
+        return res.status(404).json({
+          message: "Vendor not found",
+        });
+      }
+
+      // PRODUCTS
+      const totalProducts =
+        await Product.countDocuments({
+          vendor: vendor._id,
+        });
+
+      // ORDERS
+      const orders =
+        await Order.find({
+          "orderItems.vendor":
+            vendor._id,
+        });
+
+      const totalOrders =
+        orders.length;
+
+      // EARNINGS
+      let totalEarnings = 0;
+
+      orders.forEach((order) => {
+        order.orderItems.forEach(
+          (item) => {
+            if (
+              item.vendor.toString() ===
+              vendor._id.toString()
+            ) {
+              totalEarnings +=
+                item.price *
+                item.quantity;
+            }
+          }
+        );
+      });
+
+      res.json({
+        totalProducts,
+        totalOrders,
+        totalEarnings,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message:
+          "Failed to fetch dashboard",
+        error:
+          error.message,
+      });
+    }
+  };
+
 
 // CREATE RAZORPAY ORDER
 exports.createPayment =

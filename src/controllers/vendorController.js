@@ -129,3 +129,42 @@
         res.status(500).json(error);
       }
     };
+
+    exports.updateVendorProfile =
+  async (req, res) => {
+    try {
+      const vendor =
+        await Vendor.findOne({
+          user: req.user.id,
+        });
+
+      if (!vendor) {
+        return res.status(404).json({
+          message: "Vendor not found",
+        });
+      }
+
+      vendor.shopName =
+        req.body.shopName ||
+        vendor.shopName;
+
+      vendor.shopDescription =
+        req.body.shopDescription ||
+        vendor.shopDescription;
+
+      vendor.shopLogo =
+        req.body.shopLogo ||
+        vendor.shopLogo;
+
+      await vendor.save();
+
+      res.json(vendor);
+
+    } catch (error) {
+      res.status(500).json({
+        message:
+          "Failed to update vendor profile",
+        error: error.message,
+      });
+    }
+  };

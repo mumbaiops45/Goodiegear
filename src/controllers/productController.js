@@ -218,26 +218,31 @@ exports.deleteProduct = async (
   }
 };
 
-exports.getVendorProducts =
-  async (req, res) => {
-    try {
+exports.getVendorProducts = async (req, res) => {
+  try {
+    const vendor = await Vendor.findOne({
+      user: req.user.id,
+    });
 
-      const products =
-        await Product.find({
-          vendor: req.user.id,
-        });
-
-      res.json(products);
-
-    } catch (error) {
-
-      res.status(500).json({
-        message:
-          "Failed to fetch vendor products",
-        error,
+    if (!vendor) {
+      return res.status(404).json({
+        message: "Vendor not found",
       });
     }
-  };
+
+    const products = await Product.find({
+      vendor: vendor._id,
+    });
+
+    res.json(products);
+
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch vendor products",
+      error,
+    });
+  }
+};
 
 // UPLOAD PRODUCT IMAGE
 exports.uploadProductImage =
@@ -306,6 +311,110 @@ exports.uploadProductImage =
 
         product,
       });
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  };
+
+  exports.createProductReview =
+  async (req, res) => {
+    try {
+      const product =
+        await Product.findById(
+          req.params.id
+        );
+
+      if (!product) {
+        return res.status(404).json({
+          message:
+            "Product not found",
+        });
+      }
+
+      const review = {
+        user: req.user.id,
+        rating: req.body.rating,
+        comment: req.body.comment,
+      };
+
+      product.reviews.push(review);
+
+      product.numReviews =
+        product.reviews.length;
+
+      product.rating =
+        product.reviews.reduce(
+          (acc, item) =>
+            acc + item.rating,
+          0
+        ) / product.reviews.length;
+
+      await product.save();
+
+      res.status(201).json({
+        message:
+          "Review added successfully",
+      });
+
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  };
+  // GET REVIEWS BY PRODUCT ID
+exports.getProductReviews =
+  async (req, res) => {
+    try {
+      const product =
+        await Product.findById(
+          req.params.id
+        );
+
+      if (!product) {
+        return res.status(404).json({
+          message: "Product not found",
+        });
+      }
+
+      res.json(
+        product.reviews || []
+      );
+
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  };
+
+
+// GET ALL REVIEWS
+exports.getAllReviews =
+  async (req, res) => {
+    try {
+      const products =
+        await Product.find(
+          {},
+          "title reviews"
+        );
+
+      const reviews = [];
+
+      products.forEach(
+        (product) => {
+          product.reviews?.forEach(
+            (review) => {
+              reviews.push({
+                productId:
+                  product._id,
+                productTitle:
+                  product.title,
+                ...review.toObject(),
+              });
+            }
+          );
+        }
+      );
+
+      res.json(reviews);
+
     } catch (error) {
       res.status(500).json(error);
     }
