@@ -40,22 +40,12 @@ router.post(
   createProduct
 );
 // =========================
-// GET SINGLE PRODUCT
-// =========================
-router.get(
-  "/:id",
-  getSingleProduct
-);
-
-// =========================
 // GET ALL PRODUCTS
 // =========================
 router.get(
   "/",
   getProducts
 );
-
-
 // =========================
 // GET VENDOR PRODUCTS
 // IMPORTANT:
@@ -84,6 +74,14 @@ router.post(
   createProductReview
 );
 
+
+// =========================
+// GET SINGLE PRODUCT
+// =========================
+router.get(
+  "/:id",
+  getSingleProduct
+);
 
 
 // =========================
