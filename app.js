@@ -87,6 +87,7 @@ const adminRoutes = require("./src/routes/adminRoutes");
 const categoryRoutes = require("./src/routes/categoryRoutes");
 const wishlistRoutes = require("./src/routes/wishlistRoutes");
 
+
 const app = express();
 
 // CONNECT DATABASE
@@ -98,7 +99,7 @@ app.use(
     origin: [
       "http://localhost:3000",
       "http://localhost:3001",
-      "https://gudigere.netlify.app",
+      "https://goodiegear.netlify.app",
     ],
     credentials: true,
   })
