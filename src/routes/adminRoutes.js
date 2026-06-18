@@ -10,14 +10,40 @@ const adminMiddleware = require(
   "../middleware/adminMiddleware"
 );
 
+const upload = require(
+  "../middleware/uploadMiddleware"
+);
+
 const {
+  getAdminProfile,
+  updateAdminProfile,
   getDashboardStats,
+  getAllCustomers,
   getAllUsers,
   getAllProducts,
   getAllOrders,
+  updateOrderStatus,
   deleteUser,
 } = require(
   "../controllers/adminController"
+);
+
+
+// ADMIN PROFILE
+router.get(
+  "/profile",
+  authMiddleware,
+  adminMiddleware,
+  getAdminProfile
+);
+
+// UPDATE ADMIN PROFILE
+router.put(
+  "/profile",
+  authMiddleware,
+  adminMiddleware,
+  upload.single("profilePhoto"),
+  updateAdminProfile
 );
 
 
@@ -27,6 +53,15 @@ router.get(
   authMiddleware,
   adminMiddleware,
   getDashboardStats
+);
+
+
+// CUSTOMERS ONLY
+router.get(
+  "/customers",
+  authMiddleware,
+  adminMiddleware,
+  getAllCustomers
 );
 
 
@@ -63,6 +98,14 @@ router.get(
   authMiddleware,
   adminMiddleware,
   getAllOrders
+);
+
+// UPDATE ORDER STATUS
+router.put(
+  "/orders/:id/status",
+  authMiddleware,
+  adminMiddleware,
+  updateOrderStatus
 );
 
 module.exports = router;

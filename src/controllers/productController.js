@@ -21,40 +21,55 @@ exports.createProduct = async (
       stock,
       category,
       brand,
+      vendor: vendorIdFromBody,
     } = req.body;
 
-    // FIND VENDOR
-    const vendor =
-      await Vendor.findOne({
-        user: req.user.id,
-      });
+    let vendorId;
 
-    if (!vendor) {
-      return res.status(404).json({
-        message: "Vendor not found",
+    if (req.user.role === "admin") {
+      // ADMIN: vendor ID must be provided in body
+      if (!vendorIdFromBody) {
+        return res.status(400).json({
+          message: "Vendor ID is required",
+        });
+      }
+      vendorId = vendorIdFromBody;
+    } else {
+      // VENDOR: look up their vendor record
+      const vendor = await Vendor.findOne({ user: req.user.id });
+
+      if (!vendor) {
+        return res.status(404).json({
+          message: "Vendor not found",
+        });
+      }
+      vendorId = vendor._id;
+    }
+
+    // UPLOAD IMAGE IF PROVIDED
+    let images = [];
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "gugigere-products",
       });
+      images = [result.secure_url];
     }
 
     // CREATE PRODUCT
-    const product =
-      await Product.create({
-        vendor: vendor._id,
-
-        title,
-        description,
-        price,
-        discountPrice,
-        stock,
-        category,
-        brand,
-
-        images: [],
-      });
+    const product = await Product.create({
+      vendor: vendorId,
+      title,
+      description,
+      price,
+      discountPrice,
+      stock,
+      category,
+      brand,
+      images,
+    });
 
     res.status(201).json({
-      message:
-        "Product created successfully",
-
+      message: "Product created successfully",
       product,
     });
   } catch (error) {
@@ -127,42 +142,30 @@ exports.updateProduct = async (
 
     if (!product) {
       return res.status(404).json({
-        message:
-          "Product not found",
+        message: "Product not found",
       });
     }
 
-    // FIND VENDOR
-    const vendor =
-      await Vendor.findOne({
-        user: req.user.id,
-      });
+    // ADMIN can update any product directly
+    if (req.user.role !== "admin") {
+      const vendor = await Vendor.findOne({ user: req.user.id });
 
-    // CHECK OWNER
-    if (
-      product.vendor.toString() !==
-      vendor._id.toString()
-    ) {
-      return res.status(403).json({
-        message:
-          "Not authorized",
-      });
+      if (!vendor || product.vendor.toString() !== vendor._id.toString()) {
+        return res.status(403).json({
+          message: "Not authorized",
+        });
+      }
     }
 
     // UPDATE PRODUCT
-    const updatedProduct =
-      await Product.findByIdAndUpdate(
-        req.params.id,
-        req.body,
-        {
-          returnDocument: 'after',
-        }
-      );
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
 
     res.json({
-      message:
-        "Product updated successfully",
-
+      message: "Product updated successfully",
       updatedProduct,
     });
   } catch (error) {
@@ -260,21 +263,13 @@ exports.uploadProductImage =
         });
       }
 
-      // FIND VENDOR
-      const vendor =
-        await Vendor.findOne({
-          user: req.user.id,
-        });
+      // CHECK OWNER (skip for admin)
+      if (req.user.role !== "admin") {
+        const vendor = await Vendor.findOne({ user: req.user.id });
 
-      // CHECK OWNER
-      if (
-        product.vendor.toString() !==
-        vendor._id.toString()
-      ) {
-        return res.status(403).json({
-          message:
-            "Not authorized",
-        });
+        if (!vendor || product.vendor.toString() !== vendor._id.toString()) {
+          return res.status(403).json({ message: "Not authorized" });
+        }
       }
 
       // CHECK FILE

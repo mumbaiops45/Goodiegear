@@ -298,11 +298,12 @@
 // src/controllers/categoryController.js
 
 const Category = require("../models/Category");
+const cloudinary = require("../config/cloudinary");
 
 // CREATE CATEGORY
 exports.createCategory = async (req, res) => {
   try {
-    const { name, image, description } = req.body;
+    const { name, description } = req.body;
 
     if (!name) {
       return res.status(400).json({
@@ -323,10 +324,18 @@ exports.createCategory = async (req, res) => {
       });
     }
 
+    let imageUrl = "";
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "gugigere-categories",
+      });
+      imageUrl = result.secure_url;
+    }
+
     const category = await Category.create({
       name,
-      image,
       description,
+      image: imageUrl,
     });
 
     res.status(201).json({
@@ -434,19 +443,21 @@ exports.getCategoryById = async (req, res) => {
 // UPDATE CATEGORY
 exports.updateCategory = async (req, res) => {
   try {
-    const { name, image, description } = req.body;
+    const { name, description } = req.body;
+
+    const updateData = { name, description };
+
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "gugigere-categories",
+      });
+      updateData.image = result.secure_url;
+    }
 
     const category = await Category.findByIdAndUpdate(
       req.params.id,
-      {
-        name,
-        image,
-        description,
-      },
-      {
-        returnDocument: 'after',
-        runValidators: true,
-      }
+      updateData,
+      { new: true, runValidators: true }
     );
 
     if (!category) {

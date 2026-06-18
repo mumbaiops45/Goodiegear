@@ -1,136 +1,159 @@
-const mongoose = require("mongoose");
+  const mongoose = require("mongoose");
 
-const orderItemSchema =
-  new mongoose.Schema({
-    product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
-      required: true,
-    },
-
-    vendor: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Vendor",
-      required: true,
-    },
-
-    quantity: {
-      type: Number,
-      required: true,
-      default: 1,
-    },
-
-    price: {
-      type: Number,
-      required: true,
-    },
-  });
-
-const orderSchema =
-  new mongoose.Schema(
-    {
-      user: {
-        type:
-          mongoose.Schema.Types.ObjectId,
-        ref: "User",
+  const orderItemSchema =
+    new mongoose.Schema({
+      product: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
         required: true,
       },
 
-      orderItems: [
-        orderItemSchema,
-      ],
-
-      shippingAddress: {
-        fullName: {
-          type: String,
-          required: true,
-        },
-
-        mobile: {
-          type: String,
-          required: true,
-        },
-
-        address: {
-          type: String,
-          required: true,
-        },
-
-        city: {
-          type: String,
-          required: true,
-        },
-
-        state: {
-          type: String,
-          required: true,
-        },
-
-        pincode: {
-          type: String,
-          required: true,
-        },
-
-        country: {
-          type: String,
-          default: "India",
-        },
+      vendor: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Vendor",
+        required: true,
       },
 
-      totalPrice: {
+      quantity: {
         type: Number,
         required: true,
-        default: 0,
+        default: 1,
       },
 
-      paymentStatus: {
-        type: String,
-        enum: [
-          "Pending",
-          "Paid",
-          "Failed",
+      price: {
+        type: Number,
+        required: true,
+      },
+    });
+
+  const orderSchema =
+    new mongoose.Schema(
+      {
+        orderId: {
+          type: String,
+          unique: true,
+          sparse: true,
+        },
+
+        user: {
+          type:
+            mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+
+        orderItems: [
+          orderItemSchema,
         ],
-        default: "Pending",
-      },
 
-      orderStatus: {
-        type: String,
-        enum: [
-          "Pending",
-          "Processing",
-          "Shipped",
-          "Delivered",
-          "Cancelled",
-        ],
-        default: "Pending",
-      },
+        shippingAddress: {
+          fullName: {
+            type: String,
+            required: true,
+          },
 
-      razorpayOrderId: {
-        type: String,
-        default: "",
-      },
+          mobile: {
+            type: String,
+            required: true,
+          },
 
-      razorpayPaymentId: {
-        type: String,
-        default: "",
-      },
+          address: {
+            type: String,
+            required: true,
+          },
 
-      isDelivered: {
-        type: Boolean,
-        default: false,
-      },
+          city: {
+            type: String,
+            required: true,
+          },
 
-      deliveredAt: {
-        type: Date,
+          state: {
+            type: String,
+            required: true,
+          },
+
+          pincode: {
+            type: String,
+            required: true,
+          },
+
+          country: {
+            type: String,
+            default: "India",
+          },
+        },
+
+        totalPrice: {
+          type: Number,
+          required: true,
+          default: 0,
+        },
+
+        paymentStatus: {
+          type: String,
+          enum: [
+            "Pending",
+            "Paid",
+            "Failed",
+          ],
+          default: "Pending",
+        },
+
+        orderStatus: {
+          type: String,
+          enum: [
+            "Pending",
+            "Processing",
+            "Shipped",
+            "Delivered",
+            "Cancelled",
+          ],
+          default: "Pending",
+        },
+
+        razorpayOrderId: {
+          type: String,
+          default: "",
+        },
+
+        razorpayPaymentId: {
+          type: String,
+          default: "",
+        },
+
+        isDelivered: {
+          type: Boolean,
+          default: false,
+        },
+
+        deliveredAt: {
+          type: Date,
+        },
       },
-    },
-    {
-      timestamps: true,
+      {
+        timestamps: true,
+      }
+    );
+
+  // AUTO-GENERATE orderId like ORD-0001, ORD-0002
+  orderSchema.pre("save", async function () {
+    if (!this.orderId) {
+      const last = await mongoose.model("Order")
+        .findOne({ orderId: { $exists: true, $ne: null } })
+        .sort({ orderId: -1 });
+
+      let nextNum = 1;
+      if (last && last.orderId) {
+        const lastNum = parseInt(last.orderId.replace("ORD-", ""), 10);
+        if (!isNaN(lastNum)) nextNum = lastNum + 1;
+      }
+
+      this.orderId = `ORD-${String(nextNum).padStart(4, "0")}`;
     }
-  );
+  });
 
-module.exports =
-  mongoose.model(
-    "Order",
-    orderSchema
-  );
+  module.exports =
+    mongoose.model(
+      "Order",
+      orderSchema
+    );

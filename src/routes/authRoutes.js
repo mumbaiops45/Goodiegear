@@ -5,6 +5,7 @@
   const {
     register,
     login,
+    adminLogin,
     refreshToken,
     logout,
   } = require("../controllers/authController");
@@ -14,6 +15,8 @@
   router.post("/register", register);
 
   router.post("/login", login);
+
+  router.post("/admin-login", adminLogin);
 
   router.get("/refresh", refreshToken);
 

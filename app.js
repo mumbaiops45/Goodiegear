@@ -86,6 +86,9 @@ const orderRoutes = require("./src/routes/orderRoutes");
 const adminRoutes = require("./src/routes/adminRoutes");
 const categoryRoutes = require("./src/routes/categoryRoutes");
 const wishlistRoutes = require("./src/routes/wishlistRoutes");
+const reviewRoutes = require("./src/routes/reviewRoutes");
+const bannerRoutes = require("./src/routes/bannerRoutes");
+const dashboardRoutes = require("./src/routes/dashboardRoutes");
 
 
 const app = express();
@@ -168,6 +171,9 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/banners", bannerRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // ========== ERROR HANDLER FOR MULTER (optional) ==========
 app.use((err, req, res, next) => {

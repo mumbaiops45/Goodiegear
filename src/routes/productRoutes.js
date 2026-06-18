@@ -10,6 +10,10 @@ const vendorMiddleware = require(
   "../middleware/vendorMiddleware"
 );
 
+const adminMiddleware = require(
+  "../middleware/adminMiddleware"
+);
+
 const upload = require(
   "../middleware/uploadMiddleware"
 );
@@ -36,7 +40,8 @@ const {
 router.post(
   "/",
   authMiddleware,
-  vendorMiddleware,
+  adminMiddleware,
+  upload.single("image"),
   createProduct
 );
 // =========================
@@ -90,7 +95,7 @@ router.get(
 router.put(
   "/:id",
   authMiddleware,
-  vendorMiddleware,
+  adminMiddleware,
   updateProduct
 );
 
@@ -101,7 +106,7 @@ router.put(
 router.delete(
   "/:id",
   authMiddleware,
-  vendorMiddleware,
+  adminMiddleware,
   deleteProduct
 );
 
@@ -112,7 +117,7 @@ router.delete(
 router.post(
   "/upload/:id",
   authMiddleware,
-  vendorMiddleware,
+  adminMiddleware,
   upload.single("image"),
   uploadProductImage
 );

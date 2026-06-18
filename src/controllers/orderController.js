@@ -150,19 +150,16 @@ exports.createOrder = async (req, res) => {
       });
 
     res.status(201).json({
-      message:
-        "Order placed successfully",
-
+      message: "Order placed successfully",
+      orderId: order.orderId,
       order,
     });
   } catch (error) {
     console.log(error);
 
     res.status(500).json({
-      message:
-        "Failed to create order",
-      error:
-        error.message,
+      message: "Failed to create order",
+      error: error.message,
     });
   }
 };

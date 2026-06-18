@@ -24,6 +24,11 @@ const userSchema = new mongoose.Schema(
       default: "customer",
     },
 
+    profilePhoto: {
+      type: String,
+      default: "",
+    },
+
     refreshToken: {
       type: String,
       default: "",

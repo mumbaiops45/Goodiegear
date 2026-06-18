@@ -6,6 +6,70 @@ const Product = require("../models/Product");
 
 const Order = require("../models/Order");
 
+const cloudinary = require("../config/cloudinary");
+
+const bcrypt = require("bcryptjs");
+
+
+// GET ADMIN PROFILE
+exports.getAdminProfile = async (req, res) => {
+  try {
+    const admin = await User.findById(req.user.id).select("-password -refreshToken");
+
+    if (!admin || admin.role !== "admin") {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    res.json(admin);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+// UPDATE ADMIN PROFILE
+exports.updateAdminProfile = async (req, res) => {
+  try {
+    const admin = await User.findById(req.user.id);
+
+    if (!admin || admin.role !== "admin") {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    const { name, email, password } = req.body;
+
+    if (name) admin.name = name;
+    if (email) admin.email = email;
+
+    if (password) {
+      admin.password = await bcrypt.hash(password, 10);
+    }
+
+    // UPLOAD PHOTO TO CLOUDINARY
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "gugigere-admin",
+      });
+      admin.profilePhoto = result.secure_url;
+    }
+
+    await admin.save();
+
+    res.json({
+      message: "Profile updated successfully",
+      user: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+        profilePhoto: admin.profilePhoto,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
 // DASHBOARD STATS
 exports.getDashboardStats =
@@ -51,20 +115,38 @@ exports.getDashboardStats =
   };
 
 
-// GET ALL USERS
-exports.getAllUsers =
-  async (req, res) => {
-    try {
-      const users =
-        await User.find().sort({
-          createdAt: -1,
-        });
+// GET ALL CUSTOMERS
+exports.getAllCustomers = async (req, res) => {
+  try {
+    const customers = await User.find({ role: "customer" })
+      .select("-password -refreshToken")
+      .sort({ createdAt: -1 });
 
-      res.json(users);
-    } catch (error) {
-      res.status(500).json(error);
+    res.json({ total: customers.length, customers });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+// GET ALL USERS
+exports.getAllUsers = async (req, res) => {
+  try {
+    const filter = {};
+
+    if (req.query.role) {
+      filter.role = req.query.role;
     }
-  };
+
+    const users = await User.find(filter)
+      .select("-password -refreshToken")
+      .sort({ createdAt: -1 });
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+};
 
 
 // GET ALL PRODUCTS
@@ -89,27 +171,51 @@ exports.getAllProducts =
 
 
 // GET ALL ORDERS
-exports.getAllOrders =
-  async (req, res) => {
-    try {
-      const orders =
-        await Order.find()
-          .populate(
-            "user",
-            "name email"
-          )
-          .populate(
-            "orderItems.product"
-          )
-          .sort({
-            createdAt: -1,
-          });
+exports.getAllOrders = async (req, res) => {
+  try {
+    const filter = {};
 
-      res.json(orders);
-    } catch (error) {
-      res.status(500).json(error);
+    if (req.query.orderStatus) filter.orderStatus = req.query.orderStatus;
+    if (req.query.paymentStatus) filter.paymentStatus = req.query.paymentStatus;
+
+    const orders = await Order.find(filter)
+      .populate("user", "name email")
+      .populate("orderItems.product", "title price images")
+      .sort({ createdAt: -1 });
+
+    res.json({ total: orders.length, orders });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+// UPDATE ORDER STATUS (admin)
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { orderStatus, paymentStatus } = req.body;
+
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
     }
-  };
+
+    if (orderStatus) order.orderStatus = orderStatus;
+    if (paymentStatus) order.paymentStatus = paymentStatus;
+
+    if (orderStatus === "Delivered") {
+      order.isDelivered = true;
+      order.deliveredAt = Date.now();
+    }
+
+    await order.save();
+
+    res.json({ message: "Order status updated", order });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
   // DELETE USER
 exports.deleteUser =

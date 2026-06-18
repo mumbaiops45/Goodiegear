@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
 
-// Middleware (adjust paths according to your project)
 const authMiddleware = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
+const upload = require("../middleware/uploadMiddleware");
 
 const {
   createCategory,
@@ -18,8 +18,8 @@ router.get("/", getCategories);
 router.get("/:id", getCategoryById);
 
 // Admin only routes
-router.post("/", authMiddleware, adminMiddleware, createCategory);
-router.put("/:id", authMiddleware, adminMiddleware, updateCategory);
+router.post("/", authMiddleware, adminMiddleware, upload.single("image"), createCategory);
+router.put("/:id", authMiddleware, adminMiddleware, upload.single("image"), updateCategory);
 router.delete("/:id", authMiddleware, adminMiddleware, deleteCategory);
 
 module.exports = router;
