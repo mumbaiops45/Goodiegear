@@ -103,6 +103,7 @@ app.use(
       "http://localhost:3000",
       "http://localhost:3001",
       "https://goodiegear.netlify.app",
+      "https://goodiegearadmin.netlify.app"
     ],
     credentials: true,
   })
