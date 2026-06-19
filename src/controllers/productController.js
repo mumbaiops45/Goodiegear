@@ -192,21 +192,16 @@ exports.deleteProduct = async (
       });
     }
 
-    // FIND VENDOR
-    const vendor =
-      await Vendor.findOne({
-        user: req.user.id,
-      });
+    // Admins can delete any product; vendors can only delete their own
+    if (req.user.role !== "admin") {
+      const vendor = await Vendor.findOne({ user: req.user.id });
 
-    // CHECK OWNER
-    if (
-      product.vendor.toString() !==
-      vendor._id.toString()
-    ) {
-      return res.status(403).json({
-        message:
-          "Not authorized",
-      });
+      if (
+        !vendor ||
+        product.vendor.toString() !== vendor._id.toString()
+      ) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
     }
 
     // DELETE PRODUCT
