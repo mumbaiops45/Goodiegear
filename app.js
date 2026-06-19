@@ -89,6 +89,7 @@ const wishlistRoutes = require("./src/routes/wishlistRoutes");
 const reviewRoutes = require("./src/routes/reviewRoutes");
 const bannerRoutes = require("./src/routes/bannerRoutes");
 const dashboardRoutes = require("./src/routes/dashboardRoutes");
+const couponRoutes = require("./src/routes/couponRoutes");
 
 
 const app = express();
@@ -175,6 +176,7 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/banners", bannerRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/coupons", couponRoutes);
 
 // ========== ERROR HANDLER FOR MULTER (optional) ==========
 app.use((err, req, res, next) => {
