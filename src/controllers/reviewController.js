@@ -165,3 +165,17 @@ exports.rejectReview = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// GET ALL PUBLISHED REVIEWS (public – for testimonials)
+exports.getPublishedReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({ status: "Published" })
+      .populate("customer", "name email avatar location")
+      .populate("product", "title")
+      .sort({ createdAt: -1 });
+
+    res.json(reviews);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

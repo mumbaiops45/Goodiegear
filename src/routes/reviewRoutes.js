@@ -13,11 +13,14 @@ const {
   deleteReview,
   approveReview,
   rejectReview,
+  getPublishedReviews,
 } = require("../controllers/reviewController");
 
 
 // PUBLIC — get published reviews for a product
 router.get("/product/:productId", getProductReviews);
+router.get("/published", getPublishedReviews);
+
 
 // CUSTOMER — create / update / delete own review
 router.post("/", authMiddleware, createReview);
@@ -29,5 +32,4 @@ router.get("/", authMiddleware, adminMiddleware, getAllReviews);
 router.get("/:id", authMiddleware, adminMiddleware, getReview);
 router.patch("/:id/approve", authMiddleware, adminMiddleware, approveReview);
 router.patch("/:id/reject", authMiddleware, adminMiddleware, rejectReview);
-
 module.exports = router;
