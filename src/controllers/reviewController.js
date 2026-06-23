@@ -1,4 +1,5 @@
 const Review = require("../models/Review");
+const Order = require("../models/Order");
 
 // GET ALL REVIEWS (admin)
 exports.getAllReviews = async (req, res) => {
@@ -56,28 +57,66 @@ exports.createReview = async (req, res) => {
   try {
     const { product, rating, comment } = req.body;
 
-    const existing = await Review.findOne({
+    // Validate input
+    if (!product || !rating) {
+      return res.status(400).json({
+        success: false,
+        message: "Product and rating are required.",
+      });
+    }
+
+    // Check if user purchased the product and it is delivered
+    const purchasedOrder = await Order.findOne({
+      user: req.user.id,
+      orderStatus: "Delivered",
+      "orderItems.product": product,
+    });
+
+    if (!purchasedOrder) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "You can review only products that have been delivered to you.",
+      });
+    }
+
+    // Check if already reviewed
+    const existingReview = await Review.findOne({
       customer: req.user.id,
       product,
     });
 
-    if (existing) {
-      return res.status(400).json({ message: "You already reviewed this product" });
+    if (existingReview) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already reviewed this product.",
+      });
     }
 
+    // Create review
     const review = await Review.create({
       customer: req.user.id,
       product,
       rating,
       comment,
+      status: "Pending",
     });
 
     await review.populate("customer", "name");
     await review.populate("product", "title");
 
-    res.status(201).json({ message: "Review submitted, pending approval", review });
+    res.status(201).json({
+      success: true,
+      message: "Review submitted successfully. Waiting for admin approval.",
+      review,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.log(error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
