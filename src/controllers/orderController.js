@@ -219,36 +219,80 @@ exports.getSingleOrder =
 
 
 // UPDATE ORDER STATUS
-exports.updateOrderStatus =
-  async (req, res) => {
-    try {
-      const order =
-        await Order.findById(
-          req.params.id
-        );
+// UPDATE ORDER STATUS + stock deduction on "Delivered"
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
 
-      if (!order) {
-        return res.status(404).json({
-          message:
-            "Order not found",
-        });
-      }
-
-      order.orderStatus =
-        req.body.status;
-
-      await order.save();
-
-      res.json({
-        message:
-          "Order status updated",
-
-        order,
-      });
-    } catch (error) {
-      res.status(500).json(error);
+    // 1. Find the order
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
     }
-  };
+
+    // 2. Already delivered – prevent duplicate action
+    if (order.orderStatus === "Delivered") {
+      return res.status(400).json({
+        message: "Order is already delivered, stock already deducted",
+      });
+    }
+
+    // 3. If new status is "Delivered" and stock not yet deducted
+    if (status === "Delivered" && !order.stockDeducted) {
+      // Use a transaction to ensure atomicity (recommended)
+      const session = await Order.startSession();
+      session.startTransaction();
+
+      try {
+        for (const item of order.orderItems) {
+          const product = await Product.findById(item.product).session(session);
+          if (!product) {
+            console.warn(`Product ${item.product} not found, skipping stock deduction`);
+            continue;
+          }
+          // Reduce stock, never below 0
+          const newStock = Math.max(0, product.stock - item.quantity);
+          await Product.updateOne(
+            { _id: product._id },
+            { $set: { stock: newStock } },
+            { session }
+          );
+        }
+
+        // Mark order as stock deducted and update delivery timestamps
+        order.stockDeducted = true;
+        order.isDelivered = true;
+        order.deliveredAt = new Date();
+
+        await order.save({ session });
+        await session.commitTransaction();
+      } catch (err) {
+        await session.abortTransaction();
+        throw err; // will be caught by outer catch
+      } finally {
+        session.endSession();
+      }
+    }
+
+    // 4. Update the order status (if not already delivered)
+    if (order.orderStatus !== status) {
+      order.orderStatus = status;
+      await order.save();
+    }
+
+    res.json({
+      message: "Order status updated",
+      order,
+    });
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    res.status(500).json({
+      message: "Failed to update order status",
+      error: error.message,
+    });
+  }
+};
 
   exports.getVendorDashboard =
   async (req, res) => {
