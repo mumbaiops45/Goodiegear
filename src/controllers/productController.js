@@ -110,9 +110,18 @@ exports.createProduct = async (
 //   }
 // };
 // GET ALL PRODUCTS
+// GET ALL PRODUCTS
 exports.getProducts = async (req, res) => {
   try {
-    const { age, search, category } = req.query;
+    const {
+      age,
+      search,
+      category,
+      brand,
+      minPrice,
+      maxPrice,
+      sort,
+    } = req.query;
 
     const filter = {
       isActive: true,
@@ -157,15 +166,44 @@ exports.getProducts = async (req, res) => {
       };
     }
 
+    // Brand Filter
+    if (brand) {
+      filter.brand = {
+        $regex: `^${brand}$`,
+        $options: "i",
+      };
+    }
+
+    // Price Filter
+    if (minPrice || maxPrice) {
+      filter.price = {};
+
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
+    }
+
+    // Deal of the Day Filter
+    if (sort === "offers") {
+      filter.isDealOfTheDay = true;
+    }
+
+    // Fetch Products
     const products = await Product.find(filter)
       .populate("vendor", "shopName")
-      .sort({ createdAt: -1 });
+      .sort(
+        sort === "rating"
+          ? { rating: -1 }
+          : { createdAt: -1 }
+      );
 
     res.json(products);
   } catch (error) {
     res.status(500).json(error);
   }
 };
+
+
+
 
 // GET SINGLE PRODUCT
 exports.getSingleProduct =
@@ -474,7 +512,7 @@ exports.getAllReviews =
     }
   };
 
-  exports.getDealOfTheDay = async (req, res) => {
+exports.getDealOfTheDay = async (req, res) => {
   try {
 
     const today = new Date();
