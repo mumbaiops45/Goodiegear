@@ -112,61 +112,56 @@ exports.createProduct = async (
 // GET ALL PRODUCTS
 exports.getProducts = async (req, res) => {
   try {
+    const { age, search, category } = req.query;
 
     const filter = {
       isActive: true,
     };
 
-    if (req.query.age) {
-
-      switch (req.query.age) {
-
+    // Age Filter
+    if (age) {
+      switch (age) {
         case "0-2":
-          filter.age = {
-            $gte: 0,
-            $lte: 2,
-          };
+          filter.age = { $gte: 0, $lte: 2 };
           break;
-
         case "3-5":
-          filter.age = {
-            $gte: 3,
-            $lte: 5,
-          };
+          filter.age = { $gte: 3, $lte: 5 };
           break;
-
         case "6-8":
-          filter.age = {
-            $gte: 6,
-            $lte: 8,
-          };
+          filter.age = { $gte: 6, $lte: 8 };
           break;
-
         case "9-12":
-          filter.age = {
-            $gte: 9,
-            $lte: 12,
-          };
+          filter.age = { $gte: 9, $lte: 12 };
           break;
-
         case "12plus":
-          filter.age = {
-            $gte: 12,
-          };
+          filter.age = { $gte: 12 };
           break;
       }
     }
 
-    console.log("Filter:", filter);
+    // Search Filter
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { category: { $regex: search, $options: "i" } },
+        { brand: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Category Filter
+    if (category) {
+      filter.category = {
+        $regex: `^${category}$`,
+        $options: "i",
+      };
+    }
 
     const products = await Product.find(filter)
       .populate("vendor", "shopName")
-      .sort({
-        createdAt: -1,
-      });
+      .sort({ createdAt: -1 });
 
     res.json(products);
-
   } catch (error) {
     res.status(500).json(error);
   }
