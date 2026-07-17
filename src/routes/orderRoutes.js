@@ -25,6 +25,7 @@ const {
   getVendorOrders,
   getVendorEarnings,
   getVendorDashboard,
+  getAllOrders,
 } = require(
   "../controllers/orderController"
 );
@@ -85,6 +86,12 @@ router.put(
   adminMiddleware,
   updateOrderStatus
 );
+// router.patch(
+//   "/:id/status",
+//   authMiddleware,
+//   adminMiddleware,
+//   updateOrderStatus
+// );
 
 
 // VENDOR ORDERS
@@ -110,5 +117,10 @@ router.get(
   vendorMiddleware,
   getVendorDashboard
 );
+
+router.get(
+  "/", authMiddleware,
+   adminMiddleware,
+    getAllOrders);
 
 module.exports = router;
