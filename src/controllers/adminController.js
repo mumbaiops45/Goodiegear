@@ -10,7 +10,6 @@ const cloudinary = require("../config/cloudinary");
 
 const bcrypt = require("bcryptjs");
 
-
 // GET ADMIN PROFILE
 exports.getAdminProfile = async (req, res) => {
   try {
@@ -198,22 +197,61 @@ exports.updateOrderStatus = async (req, res) => {
     const order = await Order.findById(req.params.id);
 
     if (!order) {
-      return res.status(404).json({ message: "Order not found" });
+      return res.status(404).json({
+        message: "Order not found",
+      });
     }
 
-    if (orderStatus) order.orderStatus = orderStatus;
-    if (paymentStatus) order.paymentStatus = paymentStatus;
+    if (order.orderStatus === "Delivered") {
+      return res.status(400).json({
+        message: "Order is already delivered",
+      });
+    }
 
-    if (orderStatus === "Delivered") {
+    if (orderStatus === "Delivered" && !order.stockDeducted) {
+      for (const item of order.orderItems) {
+        const result = await Product.updateOne(
+          {
+            _id: item.product,
+            stock: { $gte: item.quantity },
+          },
+          {
+            $inc: {
+              stock: -item.quantity,
+            },
+          }
+        );
+
+        if (result.modifiedCount === 0) {
+          return res.status(400).json({
+            message: "Not enough stock available",
+          });
+        }
+      }
+
+      order.stockDeducted = true;
       order.isDelivered = true;
-      order.deliveredAt = Date.now();
+      order.deliveredAt = new Date();
+    }
+
+    if (orderStatus) {
+      order.orderStatus = orderStatus;
+    }
+
+    if (paymentStatus) {
+      order.paymentStatus = paymentStatus;
     }
 
     await order.save();
 
-    res.json({ message: "Order status updated", order });
+    res.json({
+      message: "Order status updated",
+      order,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
