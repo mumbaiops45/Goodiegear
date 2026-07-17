@@ -29,6 +29,7 @@ const {
   createProductReview,
   getProductReviews,
   getAllReviews,
+  getDealOfTheDay,
 } = require(
   "../controllers/productController"
 );
@@ -84,9 +85,14 @@ router.post(
 // GET SINGLE PRODUCT
 // =========================
 router.get(
+  "/deal-of-the-day",
+  getDealOfTheDay
+);
+router.get(
   "/:id",
   getSingleProduct
 );
+
 
 
 // =========================

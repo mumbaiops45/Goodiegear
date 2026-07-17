@@ -22,6 +22,10 @@ exports.createProduct = async (
       category,
       brand,
       vendor: vendorIdFromBody,
+      isDealOfTheDay,
+      dealPrice,
+      dealStartDate,
+      dealEndDate,
     } = req.body;
 
     let vendorId;
@@ -66,6 +70,10 @@ exports.createProduct = async (
       category,
       brand,
       images,
+      isDealOfTheDay,
+      dealPrice,
+      dealStartDate,
+      dealEndDate,
     });
 
     res.status(201).json({
@@ -79,29 +87,90 @@ exports.createProduct = async (
 
 
 // GET ALL PRODUCTS
-exports.getProducts = async (
-  req,
-  res
-) => {
+// exports.getProducts = async (
+//   req,
+//   res
+// ) => {
+//   try {
+//     const products =
+//       await Product.find({
+//         isActive: true,
+//       })
+//         .populate(
+//           "vendor",
+//           "shopName"
+//         )
+//         .sort({
+//           createdAt: -1,
+//         });
+
+//     res.json(products);
+//   } catch (error) {
+//     res.status(500).json(error);
+//   }
+// };
+// GET ALL PRODUCTS
+exports.getProducts = async (req, res) => {
   try {
-    const products =
-      await Product.find({
-        isActive: true,
-      })
-        .populate(
-          "vendor",
-          "shopName"
-        )
-        .sort({
-          createdAt: -1,
-        });
+
+    const filter = {
+      isActive: true,
+    };
+
+    if (req.query.age) {
+
+      switch (req.query.age) {
+
+        case "0-2":
+          filter.age = {
+            $gte: 0,
+            $lte: 2,
+          };
+          break;
+
+        case "3-5":
+          filter.age = {
+            $gte: 3,
+            $lte: 5,
+          };
+          break;
+
+        case "6-8":
+          filter.age = {
+            $gte: 6,
+            $lte: 8,
+          };
+          break;
+
+        case "9-12":
+          filter.age = {
+            $gte: 9,
+            $lte: 12,
+          };
+          break;
+
+        case "12plus":
+          filter.age = {
+            $gte: 12,
+          };
+          break;
+      }
+    }
+
+    console.log("Filter:", filter);
+
+    const products = await Product.find(filter)
+      .populate("vendor", "shopName")
+      .sort({
+        createdAt: -1,
+      });
 
     res.json(products);
+
   } catch (error) {
     res.status(500).json(error);
   }
 };
-
 
 // GET SINGLE PRODUCT
 exports.getSingleProduct =
@@ -306,7 +375,7 @@ exports.uploadProductImage =
     }
   };
 
-  exports.createProductReview =
+exports.createProductReview =
   async (req, res) => {
     try {
       const product =
@@ -350,7 +419,7 @@ exports.uploadProductImage =
       res.status(500).json(error);
     }
   };
-  // GET REVIEWS BY PRODUCT ID
+// GET REVIEWS BY PRODUCT ID
 exports.getProductReviews =
   async (req, res) => {
     try {
@@ -409,3 +478,27 @@ exports.getAllReviews =
       res.status(500).json(error);
     }
   };
+
+  exports.getDealOfTheDay = async (req, res) => {
+  try {
+
+    const today = new Date();
+
+    const products = await Product.find({
+      isDealOfTheDay: true,
+      isActive: true,
+      dealStartDate: { $lte: today },
+      dealEndDate: { $gte: today },
+      stock: { $gt: 0 }
+    }).populate("vendor", "shopName");
+
+    res.json(products);
+
+  } catch (err) {
+
+    res.status(500).json({
+      message: err.message
+    });
+
+  }
+};

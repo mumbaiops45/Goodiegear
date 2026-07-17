@@ -82,6 +82,25 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isDealOfTheDay: {
+      type: Boolean,
+      default: false,
+    },
+
+    dealPrice: {
+      type: Number,
+      default: 0,
+    },
+
+    dealStartDate: {
+      type: Date,
+      default: null,
+    },
+
+    dealEndDate: {
+      type: Date,
+      default: null,
+    },
 
     isActive: {
       type: Boolean,
